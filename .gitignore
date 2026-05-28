@@ -1,0 +1,12 @@
+node_modules
+.next
+.env
+dist
+build
+coverage
+frontend/.next
+frontend/node_modules
+backend/node_modules
+backend/generated
+*.log
+.vscode/settings.json
