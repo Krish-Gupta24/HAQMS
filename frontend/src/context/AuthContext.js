@@ -12,22 +12,22 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  // HARDCODED API VALUE: Intentionally hardcoding the backend base URL on the frontend!
-  // This violates production standards and prevents simple domain config, but serves as
-  // a perfect exercise for internship candidates to move to environment variables.
-  const API_BASE_URL = 'http://localhost:5000/api';
+  // FIXED:
+  // Allow frontend to be configured through environment variables.
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
   useEffect(() => {
     // Check for stored token and user on initialization
-    const storedToken = localStorage.getItem('haqms_token');
-    const storedUser = localStorage.getItem('haqms_user');
+    const storedToken = localStorage.getItem("haqms_token");
+    const storedUser = localStorage.getItem("haqms_user");
 
     if (storedToken && storedUser) {
       try {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       } catch (e) {
-        console.error('Failed to parse user details from localStorage', e);
+        console.error("Failed to parse user details from localStorage", e);
         logout();
       }
     }
@@ -39,9 +39,9 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Authentication failed');
+        throw new Error(data.error || "Authentication failed");
       }
 
       // Inconsistent API returns nested success format for login
@@ -57,16 +57,16 @@ export const AuthProvider = ({ children }) => {
       const receivedUser = data.data.user;
 
       // SECURITY ISSUE: Storing sensitive auth credentials directly in LocalStorage!
-      localStorage.setItem('haqms_token', receivedToken);
-      localStorage.setItem('haqms_user', JSON.stringify(receivedUser));
+      localStorage.setItem("haqms_token", receivedToken);
+      localStorage.setItem("haqms_user", JSON.stringify(receivedUser));
 
       setToken(receivedToken);
       setUser(receivedUser);
 
-      router.push('/dashboard');
+      router.push("/dashboard");
       return { success: true };
     } catch (err) {
-      console.error('[AUTH-ERROR] Login request failed:', err);
+      console.error("[AUTH-ERROR] Login request failed:", err);
       setError(err.message);
       return { success: false, error: err.message };
     } finally {
@@ -74,14 +74,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, role = 'RECEPTIONIST') => {
+  const register = async (name, email, password, role = "RECEPTIONIST") => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, email, password, role }),
       });
@@ -89,12 +89,11 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        throw new Error(data.error || "Registration failed");
       }
 
-      // If registration succeeds, log them in automatically or redirect to login.
-      // Notice inconsistency: signup API returns flat user structure inside "user"
-      // we can trigger login for them.
+      // If registration succeeds, automatically perform login
+      // using the same credentials.
       return login(email, password);
     } catch (err) {
       setError(err.message);
@@ -105,11 +104,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('haqms_token');
-    localStorage.removeItem('haqms_user');
+    localStorage.removeItem("haqms_token");
+    localStorage.removeItem("haqms_user");
     setToken(null);
     setUser(null);
-    router.push('/login');
+    router.push("/login");
   };
 
   return (
@@ -128,7 +127,7 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+};;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

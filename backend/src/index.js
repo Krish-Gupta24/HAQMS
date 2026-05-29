@@ -15,15 +15,24 @@ const reportRoutes = require('./routes/reports');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS for all origins (weak/broad CORS config)
-app.use(cors());
+// Enable CORS
+// Slightly safer than allowing everything while still keeping
+// development convenience.
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || true,
+    credentials: true,
+  })
+);
 
 // Body parser
 app.use(express.json());
 
 // Simple request logger
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log(
+    `[${new Date().toISOString()}] ${req.method} ${req.path}`
+  );
   next();
 });
 
@@ -38,34 +47,49 @@ app.use('/api/reports', reportRoutes);
 // Root route
 app.get('/', (req, res) => {
   res.json({
-    message: 'Hospital Appointment and Queue Management System (HAQMS) Backend API',
+    message:
+      'Hospital Appointment and Queue Management System (HAQMS) Backend API',
     status: 'Running',
-    version: '1.0.0-deliberate-bugs'
+    version: '1.0.0-deliberate-bugs',
   });
 });
 
 // GLOBAL ERROR HANDLER
-// BUG: Improper error handling. It returns the raw error stack trace to the client,
-// which leaks details about database types, schema layout, and file paths.
+// BUG FIXED:
+// Do not expose internal error messages, stack traces,
+// database structure, or filesystem information to clients.
 app.use((err, req, res, next) => {
   console.error('[CRITICAL-ERROR]:', err);
+
   res.status(500).json({
     message: 'An unexpected internal server error occurred!',
-    error: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   });
 });
 
 // Listen on port
 app.listen(PORT, () => {
-  console.log(`===================================================`);
-  console.log(`   HAQMS BACKEND SERVER IS RUNNING ON PORT ${PORT}`);
-  console.log(`   ENVIRONMENT: ${process.env.NODE_ENV}`);
-  console.log(`===================================================`);
+  console.log(
+    `===================================================`
+  );
+  console.log(
+    `   HAQMS BACKEND SERVER IS RUNNING ON PORT ${PORT}`
+  );
+  console.log(
+    `   ENVIRONMENT: ${process.env.NODE_ENV}`
+  );
+  console.log(
+    `===================================================`
+  );
 });
 
 // Catch unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Intentionally do not exit process so candidates see unhandled promise logs
+  console.error(
+    'Unhandled Rejection at:',
+    promise,
+    'reason:',
+    reason
+  );
+
+  // Log the issue but keep application alive.
 });
